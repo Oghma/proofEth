@@ -1,0 +1,10 @@
+[package]
+name = "proof_eth"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alloy-primitives = { version = "0.5.0", features = ["rlp"] }
+alloy-rlp = { version = "0.3.3", features = ["derive"] }
+patricia_tree = "0.6.3"
+ruint = "1.11.1"
