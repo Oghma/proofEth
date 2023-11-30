@@ -1,6 +1,7 @@
 //! A block representing an Ethereum block
 use alloy_primitives::{keccak256, Address, BlockHash, Bloom, Bytes, B256, B64, U256, U64};
 use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
+use ethers::prelude;
 
 /// Ethereum block hader
 #[derive(Debug, RlpDecodable, RlpEncodable)]
@@ -24,6 +25,30 @@ pub struct BlockHeader {
     pub withdrawals_root: B256,
 }
 
+impl<T> From<prelude::Block<T>> for BlockHeader {
+    fn from(value: prelude::Block<T>) -> Self {
+        Self {
+            parent: BlockHash::new(value.parent_hash.0),
+            uncles_hash: BlockHash::new(value.uncles_hash.0),
+            miner: Address::new(value.author.unwrap().0),
+            state_root: B256::new(value.state_root.0),
+            transaction_root: B256::new(value.transactions_root.0),
+            receipts_root: B256::new(value.receipts_root.0),
+            logs_bloom: Bloom::new(value.logs_bloom.unwrap().0),
+            difficulty: value.difficulty.into(),
+            number: U64::from_limbs(value.number.unwrap().0),
+            gas_limit: value.gas_limit.into(),
+            gas_used: value.gas_used.into(),
+            timestamp: value.timestamp.into(),
+            extra_data: Bytes::from(value.extra_data.0),
+            mix_hash: B256::new(value.mix_hash.unwrap().0),
+            nonce: B64::new(value.nonce.unwrap().0),
+            base_fee_per_gas: value.base_fee_per_gas.unwrap().into(),
+            withdrawals_root: B256::new(value.withdrawals_root.unwrap().0),
+        }
+    }
+}
+
 #[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct Block {
     pub hash: BlockHash,
@@ -42,6 +67,13 @@ impl Block {
     /// Check if the block hash is correct
     pub fn verify_block_hash(&self, hash: &BlockHash) -> bool {
         &self.hash == hash
+    }
+}
+
+impl<T> From<prelude::Block<T>> for Block {
+    fn from(value: prelude::Block<T>) -> Self {
+        let header = BlockHeader::from(value);
+        Block::new(header)
     }
 }
 
