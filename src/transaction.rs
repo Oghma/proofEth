@@ -53,6 +53,7 @@ impl TxLegacy {
 }
 
 pub struct Tx2930 {
+    pub tx_type: u8,
     pub chain_id: ChainId,
     pub nonce: u64,
     pub gas_price: u128,
@@ -76,6 +77,7 @@ impl Tx2930 {
 }
 
 pub struct Tx1559 {
+    pub tx_type: u8,
     pub chain_id: ChainId,
     pub nonce: u64,
     pub gas_price: u128,
