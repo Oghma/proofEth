@@ -21,7 +21,7 @@ pub struct TxLegacy {
 }
 
 impl TxLegacy {
-    pub fn payload_length(&self) -> usize {
+    fn payload_length(&self) -> usize {
         let mut len = self.nonce.length();
         len += self.gas_price.length();
         len += self.gas_limit.length();
