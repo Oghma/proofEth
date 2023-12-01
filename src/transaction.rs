@@ -106,7 +106,6 @@ pub struct Tx1559 {
     pub tx_type: u8,
     pub chain_id: ChainId,
     pub nonce: u64,
-    pub gas_price: u128,
     pub gas_limit: u64,
     pub to: Address,
     pub value: U256,
@@ -115,6 +114,47 @@ pub struct Tx1559 {
     pub access_list: Vec<AccessListItem>,
     pub max_fee_per_gas: u128,
     pub max_priority_fee_per_gas: u128,
+}
+
+impl Tx1559 {
+    fn payload_length(&self) -> usize {
+        let mut len = self.chain_id.length();
+        len += self.nonce.length();
+        len += self.max_priority_fee_per_gas.length();
+        len += self.max_fee_per_gas.length();
+        len += self.gas_limit.length();
+        len += self.to.length();
+        len += self.value.length();
+        len += self.data.length();
+        len += self.access_list.length();
+        len += self.signature.v.length();
+        len += self.signature.r.length();
+        len += self.signature.s.length();
+
+        len
+    }
+
+    pub fn encode(&self, out: &mut dyn BufMut) {
+        let payload_length = self.payload_length();
+        let header = alloy_rlp::Header {
+            list: true,
+            payload_length,
+        };
+
+        out.put_u8(self.tx_type);
+        header.encode(out);
+
+        self.chain_id.encode(out);
+        self.nonce.encode(out);
+        self.max_priority_fee_per_gas.encode(out);
+        self.max_fee_per_gas.encode(out);
+        self.gas_limit.encode(out);
+        self.to.encode(out);
+        self.value.encode(out);
+        self.data.0.encode(out);
+        self.access_list.encode(out);
+        self.signature.encode(out);
+    }
 }
 
 #[derive(Debug, RlpDecodable, RlpEncodable)]
