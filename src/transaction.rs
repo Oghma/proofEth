@@ -96,6 +96,7 @@ pub struct Signature {
     pub s: U256,
 }
 
+#[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct AccessListItem {
     pub address: Address,
     pub storage_key: Vec<B256>,
