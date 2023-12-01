@@ -66,13 +66,39 @@ pub struct Tx2930 {
 }
 
 impl Tx2930 {
+    fn payload_length(&self) -> usize {
+        let mut len = self.chain_id.length();
+        len += self.nonce.length();
+        len += self.gas_price.length();
+        len += self.gas_limit.length();
+        len += self.to.length();
+        len += self.value.length();
+        len += self.data.length();
+        len += self.access_list.length();
+        len += self.signature.length();
+
+        len
+    }
+
     pub fn encode(&self, out: &mut dyn BufMut) {
+        let payload_length = self.payload_length();
+        let header = alloy_rlp::Header {
+            list: true,
+            payload_length,
+        };
+
+        out.put_u8(self.tx_type);
+        header.encode(out);
+
+        self.chain_id.encode(out);
         self.nonce.encode(out);
         self.gas_price.encode(out);
         self.gas_limit.encode(out);
         self.to.encode(out);
         self.value.encode(out);
         self.data.0.encode(out);
+        self.access_list.encode(out);
+        self.signature.encode(out);
     }
 }
 
