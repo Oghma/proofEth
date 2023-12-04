@@ -166,6 +166,14 @@ pub struct Signature {
     pub s: U256,
 }
 
+impl Signature {
+    pub fn encode(&self, out: &mut dyn BufMut) {
+        self.v.encode(out);
+        self.r.encode(out);
+        self.s.encode(out);
+    }
+}
+
 #[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct AccessListItem {
     pub address: Address,
