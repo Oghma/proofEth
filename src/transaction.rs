@@ -9,6 +9,16 @@ pub enum Transaction {
     Eip1559(Tx1559),
 }
 
+impl Transaction {
+    pub fn encode(&self, out: &mut dyn BufMut) {
+        match self {
+            Self::Legacy(txn) => txn.encode(out),
+            Self::Eip1559(txn) => txn.encode(out),
+            Self::Eip2930(txn) => txn.encode(out),
+        }
+    }
+}
+
 pub struct TxLegacy {
     pub chain_id: ChainId,
     pub nonce: u64,
