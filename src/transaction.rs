@@ -28,7 +28,9 @@ impl TxLegacy {
         len += self.to.length();
         len += self.value.length();
         len += self.data.length();
-        len += self.signature.length();
+        len += self.signature.v.length();
+        len += self.signature.r.length();
+        len += self.signature.s.length();
 
         len
     }
