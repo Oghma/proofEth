@@ -179,3 +179,122 @@ pub struct AccessListItem {
     pub address: Address,
     pub storage_key: Vec<B256>,
 }
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use alloy_primitives::{address, keccak256, uint, BlockHash};
+
+    use super::*;
+
+    #[test]
+    fn should_legacy_hash_correctly() {
+        let txn = TxLegacy {
+            chain_id: 5,
+            nonce: 1752,
+            gas_price: 300000000000,
+            gas_limit: 90277,
+            to: address!("1643E812aE58766192Cf7D2Cf9567dF2C37e9B7F"),
+            value: uint!(3000000000000000000_U256),
+            data: "0xa1903eab0000000000000000000000000000000000000000000000000000000000000000"
+                .parse()
+                .unwrap(),
+            signature: Signature {
+                v: uint!(45_U256),
+                r: "0xb1df344bc5f8d4508b03bc24e73b8a411e6662152fc083bc044e59826cae3421"
+                    .parse()
+                    .unwrap(),
+                s: "0x08d15757b321670c81ad46e61eaa7c58279559af972d048648cfc40ba8ff4133"
+                    .parse()
+                    .unwrap(),
+            },
+        };
+
+        let mut buffer = Vec::<u8>::new();
+        txn.encode(&mut buffer);
+
+        assert_eq!(
+            keccak256(buffer),
+            BlockHash::from_str(
+                "0x2dd5d1a058f69df4c374081e0d6be639c65f8b39967d4ea8dc62ec77b4cca1d5"
+            )
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn should_type1_hash_correctly() {
+        let txn = Tx2930 {
+            tx_type: 1,
+            chain_id: 1,
+            nonce: 160466,
+            gas_limit: 230684,
+            gas_price: 41014545799,
+            to: address!("A69babEF1cA67A37Ffaf7a485DfFF3382056e78C"),
+            value: uint!(11846912_U256),
+            data: "0x78e111f60000000000000000000000002d876e69e7017421b77822b1bb4c8da1307a19700000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000014470aa0dfe000000000000000000000000e45b4a84e0ad24b8617a489d743c52b84b7acebe0000000000000000000000005b7533812759b45c2b44c19e320ba2cd2681b542000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000002c6b50bca00000000000000000000000000000000000000000000000000006c72001c8d6e00000000000000000000000000000000000000000000000001a5ce878dc1dc50000000000000000000000000000000000000000000013633fa3aece210000000000000000000000000000000000000000000000000013633fa3aece2100000000000000000000000000000000000000000000000000000000000000065673bffff0000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000"
+                .parse()
+                .unwrap(),
+            signature: Signature {
+                v: uint!(1_U256),
+                r: "0xbed4a3918a4478c26dc5cec677fe21dc3599f2597e2b8ff0320c141a1d5213c8"
+                    .parse()
+                    .unwrap(),
+                s: "0x55a57e4e2904c8268c698357e1c77789af9d484122ace41bb69add4f3bc697c0"
+                    .parse()
+                    .unwrap(),
+            },
+            access_list: Vec::new(),
+        };
+
+        let mut buffer = Vec::<u8>::new();
+        txn.encode(&mut buffer);
+
+        assert_eq!(
+            keccak256(buffer),
+            BlockHash::from_str(
+                "0x6fa053fe85c3bbda94b727f7a085196222bd80429325b49481b518865ff0fe9f"
+            )
+            .unwrap()
+        );
+    }
+
+    #[test]
+    fn should_type2_hash_correctly() {
+        let txn = Tx1559 {
+            tx_type: 2,
+            chain_id: 1,
+            nonce: 160466,
+            gas_limit: 230684,
+            to: address!("A69babEF1cA67A37Ffaf7a485DfFF3382056e78C"),
+            value: uint!(11846912_U256),
+            data: "0x78e111f60000000000000000000000002d876e69e7017421b77822b1bb4c8da1307a19700000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000014470aa0dfe000000000000000000000000e45b4a84e0ad24b8617a489d743c52b84b7acebe0000000000000000000000005b7533812759b45c2b44c19e320ba2cd2681b542000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc200000000000000000000000000000000000000000000000000000002c6b50bca00000000000000000000000000000000000000000000000000006c72001c8d6e00000000000000000000000000000000000000000000000001a5ce878dc1dc50000000000000000000000000000000000000000000013633fa3aece210000000000000000000000000000000000000000000000000013633fa3aece2100000000000000000000000000000000000000000000000000000000000000065673bffff0000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000"
+                .parse()
+                .unwrap(),
+            signature: Signature {
+                v: uint!(1_U256),
+                r: "0xbed4a3918a4478c26dc5cec677fe21dc3599f2597e2b8ff0320c141a1d5213c8"
+                    .parse()
+                    .unwrap(),
+                s: "0x55a57e4e2904c8268c698357e1c77789af9d484122ace41bb69add4f3bc697c0"
+                    .parse()
+                    .unwrap(),
+            },
+            access_list: Vec::new(),
+            max_fee_per_gas: 61521818698,
+            max_priority_fee_per_gas: 0,
+        };
+
+        let mut buffer = Vec::<u8>::new();
+        txn.encode(&mut buffer);
+
+        assert_eq!(
+            keccak256(buffer),
+            BlockHash::from_str(
+                "0xd6792b3f289f49876449d68af4706cc8cbfa5a9b480fdb7e5e0fa1fd79374348"
+            )
+            .unwrap()
+        );
+    }
+}
