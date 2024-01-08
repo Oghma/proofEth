@@ -1,8 +1,10 @@
 //! Different transaction types in Ethereum
 
-use alloy_primitives::{Address, Bytes, ChainId, B256, U256};
+use alloy_primitives::{Address, Bytes, ChainId, B256, U256, U64};
 use alloy_rlp::{BufMut, Encodable, RlpDecodable, RlpEncodable};
+use ethers::types::U64 as EU64;
 
+#[derive(Debug)]
 pub enum Transaction {
     Legacy(TxLegacy),
     Eip2930(Tx2930),
@@ -19,6 +21,101 @@ impl Transaction {
     }
 }
 
+impl From<&ethers::types::Transaction> for Transaction {
+    fn from(value: &ethers::types::Transaction) -> Self {
+        match value.transaction_type {
+            Some(EU64([0])) => {
+                let txn = TxLegacy {
+                    chain_id: value.chain_id.unwrap().as_u64(),
+                    nonce: value.nonce.as_u64(),
+                    gas_price: value.gas_price.unwrap().as_u128(),
+                    gas_limit: value.gas.as_u64(),
+                    to: Address::from(value.to.unwrap().0),
+                    value: value.value.into(),
+                    data: Bytes::from(value.input.0.clone()),
+                    signature: Signature {
+                        v: U256::from(U64::from_limbs(value.v.0)),
+                        r: value.r.into(),
+                        s: value.s.into(),
+                    },
+                };
+                Transaction::Legacy(txn)
+            }
+            Some(EU64([1])) => {
+                let access_list: Option<Vec<AccessListItem>> =
+                    value.access_list.clone().map(|list| {
+                        list.0
+                            .iter()
+                            .map(|item| AccessListItem {
+                                address: Address::from(item.address.0),
+                                storage_key: item
+                                    .storage_keys
+                                    .iter()
+                                    .map(|key| key.0.into())
+                                    .collect(),
+                            })
+                            .collect()
+                    });
+
+                let txn = Tx2930 {
+                    tx_type: 1,
+                    chain_id: value.chain_id.unwrap().as_u64(),
+                    nonce: value.nonce.as_u64(),
+                    gas_price: value.gas_price.unwrap().as_u128(),
+                    gas_limit: value.gas.as_u64(),
+                    to: Address::from(value.to.unwrap().0),
+                    value: value.value.into(),
+                    data: Bytes::from(value.input.0.clone()),
+                    access_list: access_list.unwrap(),
+                    signature: Signature {
+                        v: U256::from(U64::from_limbs(value.v.0)),
+                        r: value.r.into(),
+                        s: value.s.into(),
+                    },
+                };
+                Transaction::Eip2930(txn)
+            }
+            Some(EU64([2])) => {
+                let access_list: Option<Vec<AccessListItem>> =
+                    value.access_list.clone().map(|list| {
+                        list.0
+                            .iter()
+                            .map(|item| AccessListItem {
+                                address: Address::from(item.address.0),
+                                storage_key: item
+                                    .storage_keys
+                                    .iter()
+                                    .map(|key| key.0.into())
+                                    .collect(),
+                            })
+                            .collect()
+                    });
+
+                let txn = Tx1559 {
+                    tx_type: 1,
+                    chain_id: value.chain_id.unwrap().as_u64(),
+                    nonce: value.nonce.as_u64(),
+                    gas_limit: value.gas.as_u64(),
+                    to: Address::from(value.to.unwrap().0),
+                    value: value.value.into(),
+                    data: Bytes::from(value.input.0.clone()),
+                    access_list: access_list.unwrap(),
+                    max_fee_per_gas: value.max_fee_per_gas.unwrap().as_u128(),
+                    max_priority_fee_per_gas: value.max_priority_fee_per_gas.unwrap().as_u128(),
+                    signature: Signature {
+                        v: U256::from(U64::from_limbs(value.v.0)),
+                        r: value.r.into(),
+                        s: value.s.into(),
+                    },
+                };
+                Transaction::Eip1559(txn)
+            }
+            _ => panic!("Unknown transaction type"),
+        }
+    }
+}
+
+#[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct TxLegacy {
     pub chain_id: ChainId,
     pub nonce: u64,
@@ -64,6 +161,7 @@ impl TxLegacy {
     }
 }
 
+#[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct Tx2930 {
     pub tx_type: u8,
     pub chain_id: ChainId,
@@ -114,6 +212,7 @@ impl Tx2930 {
     }
 }
 
+#[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct Tx1559 {
     pub tx_type: u8,
     pub chain_id: ChainId,
