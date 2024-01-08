@@ -26,7 +26,6 @@ impl From<&ethers::types::Transaction> for Transaction {
         match value.transaction_type {
             Some(EU64([0])) => {
                 let txn = TxLegacy {
-                    chain_id: value.chain_id.unwrap().as_u64(),
                     nonce: value.nonce.as_u64(),
                     gas_price: value.gas_price.unwrap().as_u128(),
                     gas_limit: value.gas.as_u64(),
@@ -117,7 +116,6 @@ impl From<&ethers::types::Transaction> for Transaction {
 
 #[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct TxLegacy {
-    pub chain_id: ChainId,
     pub nonce: u64,
     pub gas_price: u128,
     pub gas_limit: u64,
@@ -300,7 +298,6 @@ mod tests {
     #[test]
     fn should_legacy_hash_correctly() {
         let txn = TxLegacy {
-            chain_id: 5,
             nonce: 1752,
             gas_price: 300000000000,
             gas_limit: 90277,
