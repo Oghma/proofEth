@@ -3,6 +3,8 @@ use alloy_primitives::{keccak256, Address, BlockHash, Bloom, Bytes, B256, B64, U
 use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
 use ethers::prelude;
 
+use crate::{transaction::Transaction, utils::index_for_rlp};
+
 /// Ethereum block hader
 #[derive(Debug, RlpDecodable, RlpEncodable)]
 pub struct BlockHeader {
@@ -49,19 +51,26 @@ impl<T> From<&prelude::Block<T>> for BlockHeader {
     }
 }
 
-#[derive(Debug, RlpDecodable, RlpEncodable)]
+#[derive(Debug)]
 pub struct Block {
     pub hash: BlockHash,
     pub header: BlockHeader,
+    pub transactions: Vec<Transaction>,
 }
 
 impl Block {
-    pub fn new(header: BlockHeader) -> Self {
+    pub fn new(header: BlockHeader, transactions: Vec<Transaction>) -> Self {
         let mut buffer = Vec::<u8>::new();
         header.encode(&mut buffer);
         let hash = keccak256(buffer);
 
-        Self { header, hash }
+        let block = Self {
+            header,
+            hash,
+            transactions,
+        };
+
+        block
     }
 
     /// Check if the block hash is correct
@@ -70,10 +79,16 @@ impl Block {
     }
 }
 
-impl<T> From<prelude::Block<T>> for Block {
-    fn from(value: prelude::Block<T>) -> Self {
-        let header = BlockHeader::from(value);
-        Block::new(header)
+impl From<prelude::Block<ethers::types::Transaction>> for Block {
+    fn from(value: prelude::Block<ethers::types::Transaction>) -> Self {
+        let header = BlockHeader::from(&value);
+        let transactions: Vec<Transaction> = value
+            .transactions
+            .iter()
+            .map(|txn| Transaction::from(txn))
+            .collect();
+
+        Block::new(header, transactions)
     }
 }
 
@@ -104,7 +119,7 @@ mod tests {
             base_fee_per_gas: uint!(41014545799_U256),
             withdrawals_root: "0x89b1b0500a08b49ec6f538aedb39aab1c384874bff882edc4560e76c76ef3f05".parse().unwrap()
         };
-        let block = Block::new(header);
+        let block = Block::new(header, Vec::new());
 
         assert!(block.verify_block_hash(
             "0x8c07fbc176e8cd1b0ea49dc56132e6e571d0c94ef0b88907658c7d197c4a9dfc"
