@@ -91,7 +91,7 @@ impl From<&ethers::types::Transaction> for Transaction {
                     });
 
                 let txn = Tx1559 {
-                    tx_type: 1,
+                    tx_type: 2,
                     chain_id: value.chain_id.unwrap().as_u64(),
                     nonce: value.nonce.as_u64(),
                     gas_limit: value.gas.as_u64(),
