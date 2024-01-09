@@ -25,8 +25,8 @@ pub struct BlockHeader {
     pub withdrawals_root: B256,
 }
 
-impl<T> From<prelude::Block<T>> for BlockHeader {
-    fn from(value: prelude::Block<T>) -> Self {
+impl<T> From<&prelude::Block<T>> for BlockHeader {
+    fn from(value: &prelude::Block<T>) -> Self {
         Self {
             parent: BlockHash::new(value.parent_hash.0),
             uncles_hash: BlockHash::new(value.uncles_hash.0),
@@ -40,7 +40,7 @@ impl<T> From<prelude::Block<T>> for BlockHeader {
             gas_limit: value.gas_limit.into(),
             gas_used: value.gas_used.into(),
             timestamp: value.timestamp.into(),
-            extra_data: Bytes::from(value.extra_data.0),
+            extra_data: Bytes::from(value.extra_data.0.clone()),
             mix_hash: B256::new(value.mix_hash.unwrap().0),
             nonce: B64::new(value.nonce.unwrap().0),
             base_fee_per_gas: value.base_fee_per_gas.unwrap().into(),
