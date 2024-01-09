@@ -1,6 +1,7 @@
 //! A block representing an Ethereum block
 use alloy_primitives::{keccak256, Address, BlockHash, Bloom, Bytes, B256, B64, U256, U64};
 use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
+use alloy_trie::{HashBuilder, Nibbles};
 use ethers::prelude;
 
 use crate::{transaction::Transaction, utils::index_for_rlp};
@@ -76,6 +77,29 @@ impl Block {
     /// Check if the block hash is correct
     pub fn verify_block_hash(&self, hash: &BlockHash) -> bool {
         &self.hash == hash
+    }
+
+    /// Build transaction_trie
+    pub fn transaction_trie(&self) -> B256 {
+        let mut trie = HashBuilder::default();
+        let mut out: Vec<u8> = Vec::new();
+        let mut index_buffer: Vec<u8> = Vec::new();
+
+        let num_transactions = self.transactions.len();
+
+        for index in 1..num_transactions {
+            out.clear();
+            index_buffer.clear();
+
+            let index = index_for_rlp(index, num_transactions);
+
+            self.transactions[index].encode(&mut out);
+            index.encode(&mut index_buffer);
+
+            trie.add_leaf(Nibbles::unpack(&index_buffer), &out);
+        }
+
+        trie.root()
     }
 }
 
