@@ -2,7 +2,9 @@
 
 use alloy_primitives::{Address, Bytes, ChainId, B256, U256, U64};
 use alloy_rlp::{BufMut, Encodable, RlpDecodable, RlpEncodable};
-use ethers::types::U64 as EU64;
+use ethers::types::{TransactionReceipt, U64 as EU64};
+
+use crate::receipt::VerifiedReceipt;
 
 #[derive(Debug)]
 pub enum VerifiedTransaction {
@@ -12,7 +14,7 @@ pub enum VerifiedTransaction {
 }
 
 impl VerifiedTransaction {
-    pub fn new(transaction: &ethers::types::Transaction) -> Self {
+    pub fn new(transaction: &ethers::types::Transaction, receipt: &TransactionReceipt) -> Self {
         match transaction.transaction_type {
             Some(EU64([0])) => {
                 let txn = TxLegacy {
@@ -27,6 +29,7 @@ impl VerifiedTransaction {
                         r: transaction.r.into(),
                         s: transaction.s.into(),
                     },
+                    receipt: VerifiedReceipt::from(receipt),
                 };
                 VerifiedTransaction::Legacy(txn)
             }
@@ -61,6 +64,7 @@ impl VerifiedTransaction {
                         r: transaction.r.into(),
                         s: transaction.s.into(),
                     },
+                    receipt: VerifiedReceipt::from(receipt),
                 };
                 VerifiedTransaction::Eip2930(txn)
             }
@@ -99,6 +103,7 @@ impl VerifiedTransaction {
                         r: transaction.r.into(),
                         s: transaction.s.into(),
                     },
+                    receipt: VerifiedReceipt::from(receipt),
                 };
                 VerifiedTransaction::Eip1559(txn)
             }
@@ -113,6 +118,14 @@ impl VerifiedTransaction {
             Self::Eip2930(txn) => txn.encode(out),
         }
     }
+
+    pub fn receipt(&self) -> &VerifiedReceipt {
+        match self {
+            Self::Legacy(txn) => &txn.receipt,
+            Self::Eip1559(txn) => &txn.receipt,
+            Self::Eip2930(txn) => &txn.receipt,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -124,6 +137,7 @@ pub struct TxLegacy {
     pub value: U256,
     pub data: Bytes,
     pub signature: Signature,
+    pub receipt: VerifiedReceipt,
 }
 
 impl TxLegacy {
@@ -172,6 +186,7 @@ pub struct Tx2930 {
     pub data: Bytes,
     pub signature: Signature,
     pub access_list: Vec<AccessListItem>,
+    pub receipt: VerifiedReceipt,
 }
 
 impl Tx2930 {
@@ -224,6 +239,7 @@ pub struct Tx1559 {
     pub access_list: Vec<AccessListItem>,
     pub max_fee_per_gas: u128,
     pub max_priority_fee_per_gas: u128,
+    pub receipt: VerifiedReceipt,
 }
 
 impl Tx1559 {
@@ -316,6 +332,7 @@ mod tests {
                     .parse()
                     .unwrap(),
             },
+            receipt: VerifiedReceipt::default(),
         };
 
         let mut buffer = Vec::<u8>::new();
@@ -353,6 +370,7 @@ mod tests {
                     .unwrap(),
             },
             access_list: Vec::new(),
+            receipt: VerifiedReceipt::default()
         };
 
         let mut buffer = Vec::<u8>::new();
@@ -391,6 +409,7 @@ mod tests {
             access_list: Vec::new(),
             max_fee_per_gas: 61521818698,
             max_priority_fee_per_gas: 0,
+            receipt: VerifiedReceipt::default()
         };
 
         let mut buffer = Vec::<u8>::new();

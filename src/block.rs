@@ -2,7 +2,7 @@
 use alloy_primitives::{keccak256, Address, BlockHash, Bloom, Bytes, B256, B64, U256, U64};
 use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
 use alloy_trie::{HashBuilder, Nibbles};
-use ethers::prelude;
+use ethers::{prelude, types::TransactionReceipt};
 
 use crate::{transaction::VerifiedTransaction, utils::index_for_rlp};
 
@@ -60,12 +60,18 @@ pub struct VerifiedBlock {
 }
 
 impl VerifiedBlock {
-    pub fn new(block: &prelude::Block<ethers::types::Transaction>) -> Self {
-        let transactions: Vec<VerifiedTransaction> = block
-            .transactions
-            .iter()
-            .map(|txn| VerifiedTransaction::new(txn))
+    pub fn new(
+        block: &prelude::Block<ethers::types::Transaction>,
+        receipts: &[TransactionReceipt],
+    ) -> Self {
+        // Maybe `receipts` are not ordered by transaction index
+        let mut receipts = receipts.to_owned();
+        receipts.sort_by(|a, b| a.transaction_index.cmp(&b.transaction_index));
+
+        let transactions = std::iter::zip(block.transactions.iter(), receipts.iter())
+            .map(|(txn, receipt)| VerifiedTransaction::new(txn, receipt))
             .collect();
+
         let header = BlockHeader::from(block);
 
         let mut verified_block = Self {
