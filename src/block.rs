@@ -118,6 +118,29 @@ impl VerifiedBlock {
 
         trie.root()
     }
+
+    /// Build a receipt trie
+    pub fn receipt_trie(&self) -> B256 {
+        let mut trie = HashBuilder::default();
+        let mut value_buffer: Vec<u8> = Vec::new();
+        let mut index_buffer: Vec<u8> = Vec::new();
+
+        let num_transactions = self.transactions.len();
+
+        for index in 0..num_transactions {
+            value_buffer.clear();
+            index_buffer.clear();
+
+            let index = index_for_rlp(index, num_transactions);
+
+            self.transactions[index].receipt().encode(&mut value_buffer);
+            index.encode(&mut index_buffer);
+
+            trie.add_leaf(Nibbles::unpack(&index_buffer), &value_buffer);
+        }
+
+        trie.root()
+    }
 }
 
 #[cfg(test)]
