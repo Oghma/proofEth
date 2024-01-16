@@ -12,37 +12,27 @@ pub enum Transaction {
 }
 
 impl Transaction {
-    pub fn encode(&self, out: &mut dyn BufMut) {
-        match self {
-            Self::Legacy(txn) => txn.encode(out),
-            Self::Eip1559(txn) => txn.encode(out),
-            Self::Eip2930(txn) => txn.encode(out),
-        }
-    }
-}
-
-impl From<&ethers::types::Transaction> for Transaction {
-    fn from(value: &ethers::types::Transaction) -> Self {
-        match value.transaction_type {
+    pub fn new(transaction: &ethers::types::Transaction) -> Self {
+        match transaction.transaction_type {
             Some(EU64([0])) => {
                 let txn = TxLegacy {
-                    nonce: value.nonce.as_u64(),
-                    gas_price: value.gas_price.unwrap().as_u128(),
-                    gas_limit: value.gas.as_u64(),
-                    to: Address::from(value.to.unwrap().0),
-                    value: value.value.into(),
-                    data: Bytes::from(value.input.0.clone()),
+                    nonce: transaction.nonce.as_u64(),
+                    gas_price: transaction.gas_price.unwrap().as_u128(),
+                    gas_limit: transaction.gas.as_u64(),
+                    to: Address::from(transaction.to.unwrap().0),
+                    value: transaction.value.into(),
+                    data: Bytes::from(transaction.input.0.clone()),
                     signature: Signature {
-                        v: U256::from(U64::from_limbs(value.v.0)),
-                        r: value.r.into(),
-                        s: value.s.into(),
+                        v: U256::from(U64::from_limbs(transaction.v.0)),
+                        r: transaction.r.into(),
+                        s: transaction.s.into(),
                     },
                 };
                 Transaction::Legacy(txn)
             }
             Some(EU64([1])) => {
                 let access_list: Option<Vec<AccessListItem>> =
-                    value.access_list.clone().map(|list| {
+                    transaction.access_list.clone().map(|list| {
                         list.0
                             .iter()
                             .map(|item| AccessListItem {
@@ -58,25 +48,25 @@ impl From<&ethers::types::Transaction> for Transaction {
 
                 let txn = Tx2930 {
                     tx_type: 1,
-                    chain_id: value.chain_id.unwrap().as_u64(),
-                    nonce: value.nonce.as_u64(),
-                    gas_price: value.gas_price.unwrap().as_u128(),
-                    gas_limit: value.gas.as_u64(),
-                    to: Address::from(value.to.unwrap().0),
-                    value: value.value.into(),
-                    data: Bytes::from(value.input.0.clone()),
+                    chain_id: transaction.chain_id.unwrap().as_u64(),
+                    nonce: transaction.nonce.as_u64(),
+                    gas_price: transaction.gas_price.unwrap().as_u128(),
+                    gas_limit: transaction.gas.as_u64(),
+                    to: Address::from(transaction.to.unwrap().0),
+                    value: transaction.value.into(),
+                    data: Bytes::from(transaction.input.0.clone()),
                     access_list: access_list.unwrap(),
                     signature: Signature {
-                        v: U256::from(U64::from_limbs(value.v.0)),
-                        r: value.r.into(),
-                        s: value.s.into(),
+                        v: U256::from(U64::from_limbs(transaction.v.0)),
+                        r: transaction.r.into(),
+                        s: transaction.s.into(),
                     },
                 };
                 Transaction::Eip2930(txn)
             }
             Some(EU64([2])) => {
                 let access_list: Option<Vec<AccessListItem>> =
-                    value.access_list.clone().map(|list| {
+                    transaction.access_list.clone().map(|list| {
                         list.0
                             .iter()
                             .map(|item| AccessListItem {
@@ -92,24 +82,35 @@ impl From<&ethers::types::Transaction> for Transaction {
 
                 let txn = Tx1559 {
                     tx_type: 2,
-                    chain_id: value.chain_id.unwrap().as_u64(),
-                    nonce: value.nonce.as_u64(),
-                    gas_limit: value.gas.as_u64(),
-                    to: Address::from(value.to.unwrap().0),
-                    value: value.value.into(),
-                    data: Bytes::from(value.input.0.clone()),
+                    chain_id: transaction.chain_id.unwrap().as_u64(),
+                    nonce: transaction.nonce.as_u64(),
+                    gas_limit: transaction.gas.as_u64(),
+                    to: Address::from(transaction.to.unwrap().0),
+                    value: transaction.value.into(),
+                    data: Bytes::from(transaction.input.0.clone()),
                     access_list: access_list.unwrap(),
-                    max_fee_per_gas: value.max_fee_per_gas.unwrap().as_u128(),
-                    max_priority_fee_per_gas: value.max_priority_fee_per_gas.unwrap().as_u128(),
+                    max_fee_per_gas: transaction.max_fee_per_gas.unwrap().as_u128(),
+                    max_priority_fee_per_gas: transaction
+                        .max_priority_fee_per_gas
+                        .unwrap()
+                        .as_u128(),
                     signature: Signature {
-                        v: U256::from(U64::from_limbs(value.v.0)),
-                        r: value.r.into(),
-                        s: value.s.into(),
+                        v: U256::from(U64::from_limbs(transaction.v.0)),
+                        r: transaction.r.into(),
+                        s: transaction.s.into(),
                     },
                 };
                 Transaction::Eip1559(txn)
             }
             _ => panic!("Unknown transaction type"),
+        }
+    }
+
+    pub fn encode(&self, out: &mut dyn BufMut) {
+        match self {
+            Self::Legacy(txn) => txn.encode(out),
+            Self::Eip1559(txn) => txn.encode(out),
+            Self::Eip2930(txn) => txn.encode(out),
         }
     }
 }

@@ -64,7 +64,7 @@ impl VerifiedBlock {
         let transactions: Vec<Transaction> = block
             .transactions
             .iter()
-            .map(|txn| Transaction::from(txn))
+            .map(|txn| Transaction::new(txn))
             .collect();
         let header = BlockHeader::from(block);
 
