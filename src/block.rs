@@ -87,7 +87,7 @@ impl Block {
 
         let num_transactions = self.transactions.len();
 
-        for index in 1..num_transactions {
+        for index in 0..num_transactions {
             out.clear();
             index_buffer.clear();
 
