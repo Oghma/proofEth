@@ -4,7 +4,7 @@ use alloy_rlp::{Encodable, RlpDecodable, RlpEncodable};
 use alloy_trie::{HashBuilder, Nibbles};
 use ethers::prelude;
 
-use crate::{transaction::Transaction, utils::index_for_rlp};
+use crate::{transaction::VerifiedTransaction, utils::index_for_rlp};
 
 /// Ethereum block hader
 #[derive(Debug, RlpDecodable, RlpEncodable)]
@@ -56,15 +56,15 @@ impl<T> From<&prelude::Block<T>> for BlockHeader {
 pub struct VerifiedBlock {
     pub hash: BlockHash,
     pub header: BlockHeader,
-    pub transactions: Vec<Transaction>,
+    pub transactions: Vec<VerifiedTransaction>,
 }
 
 impl VerifiedBlock {
     pub fn new(block: &prelude::Block<ethers::types::Transaction>) -> Self {
-        let transactions: Vec<Transaction> = block
+        let transactions: Vec<VerifiedTransaction> = block
             .transactions
             .iter()
-            .map(|txn| Transaction::new(txn))
+            .map(|txn| VerifiedTransaction::new(txn))
             .collect();
         let header = BlockHeader::from(block);
 

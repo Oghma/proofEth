@@ -5,13 +5,13 @@ use alloy_rlp::{BufMut, Encodable, RlpDecodable, RlpEncodable};
 use ethers::types::U64 as EU64;
 
 #[derive(Debug)]
-pub enum Transaction {
+pub enum VerifiedTransaction {
     Legacy(TxLegacy),
     Eip2930(Tx2930),
     Eip1559(Tx1559),
 }
 
-impl Transaction {
+impl VerifiedTransaction {
     pub fn new(transaction: &ethers::types::Transaction) -> Self {
         match transaction.transaction_type {
             Some(EU64([0])) => {
@@ -28,7 +28,7 @@ impl Transaction {
                         s: transaction.s.into(),
                     },
                 };
-                Transaction::Legacy(txn)
+                VerifiedTransaction::Legacy(txn)
             }
             Some(EU64([1])) => {
                 let access_list: Option<Vec<AccessListItem>> =
@@ -62,7 +62,7 @@ impl Transaction {
                         s: transaction.s.into(),
                     },
                 };
-                Transaction::Eip2930(txn)
+                VerifiedTransaction::Eip2930(txn)
             }
             Some(EU64([2])) => {
                 let access_list: Option<Vec<AccessListItem>> =
@@ -100,7 +100,7 @@ impl Transaction {
                         s: transaction.s.into(),
                     },
                 };
-                Transaction::Eip1559(txn)
+                VerifiedTransaction::Eip1559(txn)
             }
             _ => panic!("Unknown transaction type"),
         }
