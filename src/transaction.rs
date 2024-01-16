@@ -115,7 +115,7 @@ impl VerifiedTransaction {
     }
 }
 
-#[derive(Debug, RlpDecodable, RlpEncodable)]
+#[derive(Debug)]
 pub struct TxLegacy {
     pub nonce: u64,
     pub gas_price: u128,
@@ -160,7 +160,7 @@ impl TxLegacy {
     }
 }
 
-#[derive(Debug, RlpDecodable, RlpEncodable)]
+#[derive(Debug)]
 pub struct Tx2930 {
     pub tx_type: u8,
     pub chain_id: ChainId,
@@ -211,7 +211,7 @@ impl Tx2930 {
     }
 }
 
-#[derive(Debug, RlpDecodable, RlpEncodable)]
+#[derive(Debug)]
 pub struct Tx1559 {
     pub tx_type: u8,
     pub chain_id: ChainId,
