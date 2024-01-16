@@ -53,13 +53,13 @@ impl<T> From<&prelude::Block<T>> for BlockHeader {
 }
 
 #[derive(Debug)]
-pub struct Block {
+pub struct VerifiedBlock {
     pub hash: BlockHash,
     pub header: BlockHeader,
     pub transactions: Vec<Transaction>,
 }
 
-impl Block {
+impl VerifiedBlock {
     pub fn new(block: &prelude::Block<ethers::types::Transaction>) -> Self {
         let transactions: Vec<Transaction> = block
             .transactions
@@ -146,7 +146,7 @@ mod tests {
         header.encode(&mut buffer);
         let hash = keccak256(buffer);
 
-        let block = Block {
+        let block = VerifiedBlock {
             hash,
             header,
             transactions: Vec::new(),
