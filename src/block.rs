@@ -60,18 +60,29 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn new(header: BlockHeader, transactions: Vec<Transaction>) -> Self {
-        let mut buffer = Vec::<u8>::new();
-        header.encode(&mut buffer);
-        let hash = keccak256(buffer);
+    pub fn new(block: &prelude::Block<ethers::types::Transaction>) -> Self {
+        let transactions: Vec<Transaction> = block
+            .transactions
+            .iter()
+            .map(|txn| Transaction::from(txn))
+            .collect();
+        let header = BlockHeader::from(block);
 
-        let block = Self {
+        let mut verified_block = Self {
             header,
-            hash,
+            hash: BlockHash::ZERO,
             transactions,
         };
 
-        block
+        // Calculate transaction trie and update the header
+        verified_block.header.transaction_root = verified_block.transaction_trie();
+
+        // Calculate block hash
+        let mut buffer = Vec::<u8>::new();
+        verified_block.header.encode(&mut buffer);
+        verified_block.hash = keccak256(buffer);
+
+        verified_block
     }
 
     /// Check if the block hash is correct
@@ -103,27 +114,14 @@ impl Block {
     }
 }
 
-impl From<prelude::Block<ethers::types::Transaction>> for Block {
-    fn from(value: prelude::Block<ethers::types::Transaction>) -> Self {
-        let header = BlockHeader::from(&value);
-        let transactions: Vec<Transaction> = value
-            .transactions
-            .iter()
-            .map(|txn| Transaction::from(txn))
-            .collect();
-
-        Block::new(header, transactions)
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use alloy_primitives::{address, uint};
+    use alloy_primitives::{address, fixed_bytes, uint};
 
     use super::*;
 
     #[test]
-    fn should_hash_correct() {
+    fn should_block_hash_correct() {
         let header= BlockHeader {
             parent: "0x9e8dd74d00937fddbbf465cb828acbdb9af2514a6e9d633589f5e4a047dfec5b".parse().unwrap(),
             uncles_hash: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347".parse().unwrap(),
@@ -143,13 +141,19 @@ mod tests {
             base_fee_per_gas: uint!(41014545799_U256),
             withdrawals_root: "0x89b1b0500a08b49ec6f538aedb39aab1c384874bff882edc4560e76c76ef3f05".parse().unwrap()
         };
-        let block = Block::new(header, Vec::new());
 
-        assert!(block.verify_block_hash(
-            "0x8c07fbc176e8cd1b0ea49dc56132e6e571d0c94ef0b88907658c7d197c4a9dfc"
-                .parse()
-                .as_ref()
-                .unwrap()
-        ))
+        let mut buffer = Vec::<u8>::new();
+        header.encode(&mut buffer);
+        let hash = keccak256(buffer);
+
+        let block = Block {
+            hash,
+            header,
+            transactions: Vec::new(),
+        };
+
+        assert!(block.verify_block_hash(&fixed_bytes!(
+            "8c07fbc176e8cd1b0ea49dc56132e6e571d0c94ef0b88907658c7d197c4a9dfc"
+        )))
     }
 }
